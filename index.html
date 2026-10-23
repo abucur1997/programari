@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Programări manichiură și pedichiură</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#ece8f1; --panel:#ffffff; --ink:#261a2e; --muted:#6b5f75; --line:#d9d2e0;
+  --accent:#a3205a; --accent-ink:#ffffff; --soft:#f6dfe9; --off:#f0edf3;
+  --okbg:#e3f4e8; --okink:#16502a; --okline:#2f9e57; --errbg:#fde8e8; --errink:#7a1414;
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#191220; --panel:#241a2d; --ink:#f1ebf5; --muted:#a99db4; --line:#3a2d46; --accent:#e0558f; --accent-ink:#1b0f16; --soft:#3a1f2d; --off:#2b2135;
+  --okbg:#173424; --okink:#c9f0d6; --okline:#3fbf6f; --errbg:#4a1c1c; --errink:#ffd6d6}
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:32px 16px 64px}
+h1{font:700 clamp(30px,7vw,44px)/1.05 "Bricolage Grotesque",Figtree,sans-serif;margin:0 0 8px;letter-spacing:-.02em}
+.lead{color:var(--muted);margin:0 0 28px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+h2{font:700 18px/1.2 "Bricolage Grotesque",Figtree,sans-serif;margin:0 0 14px}
+.opts{display:grid;gap:10px}
+.opt{position:relative}
+.opt input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.opt label{display:flex;justify-content:space-between;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;cursor:pointer}
+.opt label small{color:var(--muted);font-size:14px;white-space:nowrap}
+.opt input:checked+label{border-color:var(--accent);background:var(--soft)}
+.opt input:focus-visible+label{outline:3px solid var(--accent);outline-offset:2px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:transparent;color:var(--ink);border-radius:10px;padding:8px 12px;font:inherit;cursor:pointer;min-width:64px}
+.chip[aria-pressed=true]{border-color:var(--accent);background:var(--accent);color:var(--accent-ink)}
+.chip:focus-visible,button.go:focus-visible,.cal button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.chip:disabled{background:var(--off);color:var(--muted);text-decoration:line-through;cursor:not-allowed}
+.hint{color:var(--muted);margin:0}
+/* calendar */
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calhead strong{font:700 17px "Bricolage Grotesque",Figtree,sans-serif}
+.nav{width:40px;height:40px;border-radius:10px;border:1.5px solid var(--line);background:transparent;color:var(--ink);font-size:20px;cursor:pointer}
+.nav:disabled{opacity:.35;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.dow{text-align:center;font-size:13px;color:var(--muted);padding:4px 0}
+.day{aspect-ratio:1;border:0;border-radius:10px;background:transparent;color:var(--ink);font:inherit;cursor:pointer}
+.day:hover:not(:disabled){background:var(--soft)}
+.day:disabled{color:var(--muted);opacity:.4;cursor:not-allowed}
+.day[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);font-weight:600}
+.day.avail{font-weight:600;box-shadow:inset 0 0 0 1.5px var(--line)}
+.field{display:grid;gap:4px;margin-bottom:12px}
+.field label{font-weight:600;font-size:14px}
+input[type=text],input[type=tel],input[type=email],textarea{font:inherit;color:var(--ink);background:var(--panel);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+button.go{width:100%;font:600 17px Figtree,sans-serif;background:var(--accent);color:var(--accent-ink);border:0;border-radius:12px;padding:14px;cursor:pointer}
+button.go:disabled{opacity:.5;cursor:not-allowed}
+button.alt{margin-top:14px;font:600 15px Figtree,sans-serif;background:transparent;color:var(--okink);border:1.5px solid var(--okline);border-radius:10px;padding:10px 14px;cursor:pointer}
+.summary{background:var(--soft);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.msg{border-radius:10px;padding:12px 14px;margin-top:12px}
+.msg.err{background:var(--errbg);color:var(--errink)}
+.done{background:var(--okbg);color:var(--okink);border:2px solid var(--okline);border-radius:14px;padding:20px;margin-bottom:16px}
+.done h2{margin:0 0 6px}
+.done p{margin:6px 0 0}
+.demo{background:#fff4d6;color:#5c4400;border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:14px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+  <h1>Programează-te</h1>
+  <p class="lead">Luni–vineri, între 18:00 și 21:00. Alege serviciul, ziua și ora.</p>
+  <div class="demo" id="demo" hidden>Mod demonstrativ: adresa Google Apps Script nu e setată în fișier, deci programările nu ajung în calendar.</div>
+
+  <div class="done" id="done" hidden role="status">
+    <h2 id="doneTitle"></h2>
+    <p id="doneText"></p>
+    <button type="button" class="alt" id="again">Fă altă programare</button>
+  </div>
+
+  <div id="flow">
+    <section>
+      <h2>Serviciu</h2>
+      <div class="opts" id="services"></div>
+    </section>
+
+    <section>
+      <h2>Zi</h2>
+      <div class="calhead">
+        <button type="button" class="nav" id="prev" aria-label="Luna anterioară">‹</button>
+        <strong id="monthLabel"></strong>
+        <button type="button" class="nav" id="next" aria-label="Luna următoare">›</button>
+      </div>
+      <div class="grid" id="cal"></div>
+    </section>
+
+    <section>
+      <h2>Oră</h2>
+      <p class="hint" id="slotsHint">Alege mai întâi serviciul și ziua.</p>
+      <div class="chips" id="slots"></div>
+    </section>
+
+    <section id="formSec" hidden>
+      <h2>Datele tale</h2>
+      <div class="summary" id="summary"></div>
+      <div class="field"><label for="nume">Nume</label><input type="text" id="nume" autocomplete="name" required></div>
+      <div class="field"><label for="tel">Telefon</label><input type="tel" id="tel" autocomplete="tel" required></div>
+      <div class="field"><label for="email">Email (primești confirmarea aici)</label><input type="email" id="email" autocomplete="email" required></div>
+      <div class="field"><label for="note">Mențiuni (opțional)</label><textarea id="note" rows="2"></textarea></div>
+      <button class="go" id="send">Trimite programarea</button>
+      <div class="msg err" id="result" hidden role="alert"></div>
+    </section>
+  </div>
+</main>
+
+<script>
+// ====== SETĂRI ======
+// Lipește aici adresa web app din Google Apps Script (se termină cu /exec)
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz0qD4hdUQQFswXUgWKEtmXIo9g5KAoEiKi1NZn2n1Z5BlAR1z2e5zYuZxAbeEQStGcgw/exec";
+const TZ = "Europe/Bucharest";
+const OPEN = 18 * 60, CLOSE = 21 * 60, STEP = 30;   // 18:00–21:00, din 30 în 30 min
+const DAYS_AHEAD = 90;
+const SERVICES = [
+  { id: "mani-simpla", name: "Manichiură simplă",    min: 90  },
+  { id: "mani-model",  name: "Manichiură model",     min: 120 },
+  { id: "pedi",        name: "Pedichiură clasică",   min: 60  },
+  { id: "mani-pedi",   name: "Mani + Pedi clasică",  min: 120 },
+  { id: "mani-semi",   name: "Mani + Pedi Semi",     min: 180 }
+];
+// =====================
+
+const $ = id => document.getElementById(id);
+const state = { service: null, date: null, time: null, busy: {} };
+const fmtDur = m => (m >= 60 ? Math.floor(m / 60) + "h" : "") + (m % 60 ? " " + (m % 60) + "m" : "");
+const hhmm = m => String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
+const monthNames = ["ianuarie","februarie","martie","aprilie","mai","iunie","iulie","august","septembrie","octombrie","noiembrie","decembrie"];
+const dayNames = ["duminică","luni","marți","miercuri","joi","vineri","sâmbătă"];
+const iso = d => d.toISOString().slice(0, 10);
+const longDate = s => { const d = new Date(s + "T00:00:00Z"); return dayNames[d.getUTCDay()] + ", " + d.getUTCDate() + " " + monthNames[d.getUTCMonth()] + " " + d.getUTCFullYear(); };
+
+if (!APPS_SCRIPT_URL) $("demo").hidden = false;
+
+// ---- Servicii ----
+SERVICES.forEach(s => {
+  const d = document.createElement("div");
+  d.className = "opt";
+  d.innerHTML = `<input type="radio" name="svc" id="svc-${s.id}" value="${s.id}"><label for="svc-${s.id}"><span>${s.name}</span><small>${fmtDur(s.min)}</small></label>`;
+  d.querySelector("input").addEventListener("change", () => { state.service = s; state.time = null; renderSlots(); });
+  $("services").appendChild(d);
+});
+
+// ---- Calendar lunar ----
+function todayRO() {
+  const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: TZ }).format(new Date()).split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+const minDate = todayRO(); minDate.setUTCDate(minDate.getUTCDate() + 1);
+const maxDate = todayRO(); maxDate.setUTCDate(maxDate.getUTCDate() + DAYS_AHEAD);
+let viewY = minDate.getUTCFullYear(), viewM = minDate.getUTCMonth();
+const monthIdx = (y, m) => y * 12 + m;
+
+function renderCal() {
+  $("monthLabel").textContent = monthNames[viewM] + " " + viewY;
+  $("prev").disabled = monthIdx(viewY, viewM) <= monthIdx(minDate.getUTCFullYear(), minDate.getUTCMonth());
+  $("next").disabled = monthIdx(viewY, viewM) >= monthIdx(maxDate.getUTCFullYear(), maxDate.getUTCMonth());
+  const g = $("cal"); g.innerHTML = "";
+  ["lu","ma","mi","jo","vi","sâ","du"].forEach(n => { const h = document.createElement("div"); h.className = "dow"; h.textContent = n; g.appendChild(h); });
+  const first = new Date(Date.UTC(viewY, viewM, 1));
+  const offset = (first.getUTCDay() + 6) % 7;
+  for (let i = 0; i < offset; i++) g.appendChild(document.createElement("div"));
+  const days = new Date(Date.UTC(viewY, viewM + 1, 0)).getUTCDate();
+  for (let n = 1; n <= days; n++) {
+    const d = new Date(Date.UTC(viewY, viewM, n)), wd = d.getUTCDay();
+    const ok = wd >= 1 && wd <= 5 && d >= minDate && d <= maxDate;
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "day" + (ok ? " avail" : ""); b.textContent = n; b.disabled = !ok;
+    b.setAttribute("aria-pressed", String(iso(d) === state.date));
+    b.setAttribute("aria-label", longDate(iso(d)));
+    b.addEventListener("click", async () => {
+      state.date = iso(d); state.time = null; renderCal();
+      await loadBusy(state.date); renderSlots();
+    });
+    g.appendChild(b);
+  }
+}
+$("prev").addEventListener("click", () => { viewM--; if (viewM < 0) { viewM = 11; viewY--; } renderCal(); });
+$("next").addEventListener("click", () => { viewM++; if (viewM > 11) { viewM = 0; viewY++; } renderCal(); });
+renderCal();
+
+// ---- Intervale ocupate din Google Calendar ----
+async function loadBusy(date) {
+  if (!APPS_SCRIPT_URL || state.busy[date]) return;
+  $("slotsHint").hidden = false; $("slotsHint").textContent = "Se verifică orele libere…";
+  try {
+    const r = await fetch(APPS_SCRIPT_URL + "?action=busy&date=" + date);
+    const j = await r.json();
+    state.busy[date] = j.busy || [];
+  } catch (e) {
+    console.error(e);
+    state.busy[date] = null;
+  }
+}
+
+function renderSlots() {
+  const box = $("slots"); box.innerHTML = "";
+  $("formSec").hidden = true;
+  if (!state.service || !state.date) { $("slotsHint").hidden = false; $("slotsHint").textContent = "Alege mai întâi serviciul și ziua."; return; }
+  const busy = state.busy[state.date];
+  if (APPS_SCRIPT_URL && busy === null) { $("slotsHint").hidden = false; $("slotsHint").textContent = "Nu am putut încărca orele libere. Reîncarcă pagina și încearcă din nou."; return; }
+  $("slotsHint").hidden = true;
+  let any = false;
+  for (let s = OPEN; s + state.service.min <= CLOSE; s += STEP) {
+    const e = s + state.service.min;
+    const taken = (busy || []).some(([bs, be]) => s < be && e > bs);
+    const b = document.createElement("button");
+    b.type = "button"; b.className = "chip"; b.textContent = hhmm(s);
+    b.setAttribute("aria-pressed", String(state.time === s));
+    b.disabled = taken; if (!taken) any = true;
+    b.addEventListener("click", () => { state.time = s; renderSlots(); showForm(); });
+    box.appendChild(b);
+  }
+  if (!any) { $("slotsHint").hidden = false; $("slotsHint").textContent = "Nu mai sunt ore libere în această zi pentru acest serviciu. Alege altă zi."; }
+  if (state.time !== null) showForm();
+}
+
+function showForm() {
+  const s = state.service;
+  $("summary").textContent = `${s.name} (${fmtDur(s.min)}) · ${longDate(state.date)} · ${hhmm(state.time)}–${hhmm(state.time + s.min)}`;
+  $("formSec").hidden = false;
+}
+
+// ---- Trimitere ----
+$("send").addEventListener("click", async () => {
+  const nume = $("nume").value.trim(), tel = $("tel").value.trim(), email = $("email").value.trim();
+  const res = $("result");
+  const fail = t => { res.textContent = t; res.hidden = false; };
+  res.hidden = true;
+  if (!nume || !tel || !email) { fail("Completează numele, telefonul și emailul."); return; }
+  if (!/^[+\d][\d\s().-]{6,}$/.test(tel)) { fail("Numărul de telefon nu pare corect."); return; }
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { fail("Adresa de email nu pare corectă."); return; }
+  if (!APPS_SCRIPT_URL) { fail("Adresa Google Apps Script nu este setată în fișier."); return; }
+  const btn = $("send"); btn.disabled = true; btn.textContent = "Se trimite…";
+  const payload = {
+    service: state.service.name, minutes: state.service.min,
+    date: state.date, start: hhmm(state.time),
+    name: nume, phone: tel, email: email, note: $("note").value.trim()
+  };
+  try {
+    const r = await fetch(APPS_SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(payload) });
+    const j = await r.json();
+    if (j.ok) {
+      $("doneTitle").textContent = "Programare confirmată: " + payload.service + ", " + longDate(payload.date) + ", " + payload.start;
+      $("doneText").textContent = j.emailSent
+        ? "Ți-am trimis un email de confirmare la " + email + ", cu butonul pentru a adăuga programarea în Google Calendar."
+        : "Programarea este înregistrată, dar nu am putut trimite emailul de confirmare. Salvează-ți data și ora.";
+      $("flow").hidden = true; $("done").hidden = false;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      delete state.busy[payload.date];
+    } else {
+      fail(j.error || "Nu s-a putut face programarea.");
+      delete state.busy[state.date]; await loadBusy(state.date); renderSlots();
+      $("formSec").hidden = state.time === null;
+    }
+  } catch (e) {
+    console.error(e);
+    fail("Eroare de conexiune. Încearcă din nou.");
+  }
+  btn.disabled = false; btn.textContent = "Trimite programarea";
+});
+
+$("again").addEventListener("click", () => {
+  state.time = null; $("done").hidden = true; $("flow").hidden = false;
+  renderSlots(); window.scrollTo({ top: 0, behavior: "smooth" });
+});
+</script>
+</body>
+</html>
